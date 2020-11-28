@@ -7,7 +7,7 @@ Meeting API for Meeting bot
   <li>In terminal at location where package.json resides,run command npm install</li>
   <li>In same directory, create .env file and copy the following lines</li>
   <ul>
-    <li>MONGODB_URL =  YOUR_MONGODB_URL </li>
+    <li>MONGODB_URL =  YOUR_MONGODB_URL(replace this with yours) </li>
     <li>PORT =  3000 </li>
     <li>JWT_TOKEN = abcdefghi</li>
 
