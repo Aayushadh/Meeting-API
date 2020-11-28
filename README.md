@@ -14,4 +14,4 @@ Meeting API for Meeting bot
   </ul>
   </ul>
 
-<b>Note:- According to your needs, comment the import of the files/modules that you don't need. So that it can't any kind of error</b>
+<b>Note:- According to your needs, comment the import of the files/modules that you don't need. So that it can't generate any kind of error</b>
