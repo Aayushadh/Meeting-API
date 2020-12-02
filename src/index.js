@@ -16,7 +16,7 @@ const bodyParser = require("body-parser");
 const meeting = require("./models/meeting");
 
 // routes
-// const userRoutes = require('./routers/userRoutes')
+ const userRoutes = require('./routers/userRoutes')
 const meetingRoutes = require("./router/meetingRoutes");
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-//app.use(userRoutes)
+app.use('/user',userRoutes)
 app.use(meetingRoutes);
 
 // listening to a port
