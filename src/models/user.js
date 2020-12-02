@@ -1,8 +1,8 @@
 //DH
 
 // required modules
-const mongoose = require('mongoose')
-const validator = require('validator')
+const mongoose = require("mongoose");
+const validator = require("validator");
 
 // field that should be in this model
 /**
