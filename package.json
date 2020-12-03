@@ -5,10 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-<<<<<<< HEAD
-=======
     "dev": "nodemon src/index.js",
->>>>>>> 057bb624ddd72f8599f4ec7a31046456bf1fb363
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,6 +22,7 @@
     "bcrypt": "^5.0.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "express-async-handler": "^1.1.4",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
     "mongoose": "^5.10.17",

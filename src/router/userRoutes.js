@@ -1,197 +1,149 @@
-//DH
-// Routes for users 
-// Create User 
-//Read User 
-// Delete User 
-// Update User 
-// Login 
-<<<<<<< HEAD
-// Logour
-=======
-// Logour
+const express = require("express");
+const router = express.Router();
+const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 
-const express=require('express')
-const router=express.Router()
-const bcrypt= require('bcrypt')
-const mongoose = require('mongoose')
-const jwt= require('jsonwebtoken')
+const User = require("../models/user");
+const auth = require("../middleware/auth");
 
 
-const User = require('../models/user')
-const auth = require('../middleware/auth');
+// 1 Signup 
 
+router.post("/signup", async (req, res) => {
+  
+  const obj = new User(req.body);
 
-
-router.post('/signup',(req,res,next) => {
-    User.find({email: req.body.email}).exec()
-    .then(user =>{
-        if(user.length >=1){
-            res.status(409).json({
-                message: 'Mail already exists'
-            })
-        }
-        else{
-            if(req.body.password.length >= 6){
-                if(req.body.con_password == req.body.password){
-                    bcrypt.hash(req.body.password,10,(err,hash) => {
-                        if(err){
-                            res.status(500).json({
-                                error: err
-                           })
-                        }
-                        else{
-                           const user= new User({
-                               _id: new mongoose.Types.ObjectId(),
-                                Name:req.body.Name,
-                                email: req.body.email,
-                                password: hash
-                           })
-                           user
-                           .save()
-                           .then(result => {
-                               console.log(result)
-                                res.status(200).json({
-                                    message: 'Account is created successfully'
-                                })
-                           })
-                           .catch(err => {
-                               console.log(err)
-                                res.status(500).json({
-                                    error: err
-                                })
-                           })
-                       }
-                    })
-                }
-                else{
-                    res.status(500).json({
-                        message:'Auth Failed'
-                    })
-                }
-             }
-           else{
-               res.json({
-                   message: 'Password should be larger than 6 letters'
-               })
-           }
-        }
-    })
-})
-
-router.post('/login',(req, res, next) => {
-    User.find({ email: req.body.email })
-      .exec()
-      .then(user => {
-        if (user.length < 1) {
-          return res.status(401).json({
-            message: "Auth failed"
-          });
-        }
-        bcrypt.compare(req.body.password, user[0].password, (err, result) => {
-          if (err) {
-            return res.status(401).json({
-              message: "Auth failed"
-            });
-          }
-          if (result) {
-            const token = jwt.sign(
-              {
-                email: user[0].email,
-                userId: user[0]._id
-              },
-              process.env.JWT_KEY,
-              {
-                expiresIn: "1h"
-              }
-            );
-            return res.status(200).json({
-              message: "Auth successful",
-              token: token
-            });
-          }
-          res.status(401).json({
-            message: "Auth failed"
-          });
-        });
-      })
-      .catch(err => {
-        console.log(err);
-        res.status(500).json({
-          error: err
-        });
-    });
-})
-
-router.get('/:userId',auth,(req,res,next) => {
-    User.findById(req.params.userId)
-    .select("Name email")
-    .exec()
-    .then(doc => {
-        res.status(200).json({
-          UserDetails: doc
-       })
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({ error: err });
-    });
-})
-
-router.patch('/:userId',auth,(req, res, next) => {
-    const id = req.params.userId;
-    const updateOps = {};
-    for (const ops of req.body) {
-      updateOps[ops.propName] = ops.value;
+  try {
+    const user = await User.findOne({ email: obj.email });
+    if (user) {
+      throw new Error("User already exists!");
     }
-    User.update({ _id: id }, { $set: updateOps })
-      .exec()
-      .then(result => {
-        res.status(200).json({
-          message: "User details updated",
-          request: {
-            type: "GET",
-            url: "http://localhost:3000/user/" + id
-          }
-        });
-      })
-      .catch(err => {
-        res.status(500).json({
-          error: err
-        });
-    });
-})
 
-router.delete('/:userId',auth,(req, res, next) => {
-    const id = req.params.userId;
-    User.remove({ _id: id })
-      .exec()
-      .then(result => {
-        res.status(200).json({
-          message: "User deleted"
-        });
-      })
-      .catch(err => {
-        console.log(err);
-        res.status(500).json({
-          error: err
-        });
-    });
-})
-
-router.get('/:userId/logout',auth,async(req,res) => {
-    try {
-        req.user.tokens = req.user.tokens.filter((token) => {
-            return req.token != token.token;
-        })
-
-        await req.user.save();
-        res.send("Successfully logged out!");
-
-    } catch {
-        res.status(500).send();
-
+    if (obj.password < 8) {
+      throw new Error("Password must contain atleast 8 characters");
     }
+    const token = await obj.generateAuthToken();
+    await obj.save();
+    res.status(201).send({
+      user: obj,
+      token,
+      success:"Successfully Registerd !!"
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(400).send({ error: e.message });
+  }
+});
+
+
+// 2 Login 
+
+router.post("/login", async (req, res) => {
+  try {
+    const user1 = await User.findByCredentials(
+      req.body.email,
+      req.body.password
+    );
+    const token = await user1.generateAuthToken();
+    res.send({
+      user: user1,
+      token,
+      success:"Logged in !!"
+    });
+  } catch (e) {
+    res.status(400).send({error: e.message });
+  }
+});
+
+// 3 LogOut
+
+router.get("/logout", auth, async (req, res) => {
+  try {
+    req.user.tokens = req.user.tokens.filter((token) => {
+      return req.token != token.token;
+    });
+
+    await User.findByIdAndUpdate(req.user._id, { tokens: req.user.tokens });
+    res.send({
+		success: 'Successfully logged out!',
+	})
+  } catch {
+    res.status(500).send({error:'something went wrong'});
+  }
+});
+
+//4  Logout all the sessions 
+
+router.get("/logoutAll", auth, async (req, res) => {
+  try {
+    req.user.tokens = [];
+
+    await req.user.save();
+    res.send({success:"Logged out of all sessions !!!!!!"});
+  } catch {
+    res.status(500).send();
+  }
+});
+
+// 5 Get user profile
+
+router.get("/me", auth, async (req, res) => {
+  const user2 =  req.user
+  res.send({
+    user: user2,
+  });
+});
+
+// 6 Get user profile by id 
+
+router.get("/:id", async (req, res) => {
+  const _id = req.params.id;
+  try {
+    const user1 = await User.findById(_id);
+    if (!user1) {
+      return res.status(404).send("Not Found");
+    }
+    res.status(200).send(user1);
+  } catch (e) {
+    res.status(400).send({error:e.message});
+  }
+});
+
+//7  update  user profile 
+
+router.patch('/me', auth, async (req, res) => {
+	const _id = req.user.id
+	const fields = ['name', 'password']
+	const updates = Object.keys(req.body)
+	const isValid = updates.every((inst) => fields.includes(inst))
+	if (!isValid) {
+		console.log('hello')
+		return res.status(400).send({
+			error: 'Bad Fields',
+		})
+	}
+	try {
+		const user1 = await User.findByIdAndUpdate(_id)
+		updates.forEach((update) => (user1[update] = req.body[update]))
+
+		await user1.save()
+
+		res.status(200).send(user1)
+	} catch (e) {
+		res.status(400).send(e)
+	}
 })
 
-module.exports= router
->>>>>>> 057bb624ddd72f8599f4ec7a31046456bf1fb363
+// 8 deactivate account 
+
+router.delete("/me", auth, async (req, res) => {
+  try {
+    await req.user.remove();
+    res.send({message:"Deleted Successfully !!"});
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+
+module.exports = router;

@@ -1,27 +1,30 @@
-<<<<<<< HEAD
-//DH 
-
-// required module
-const jwt = require('jsonwebtoken')
-
-// create a auth middleware here
-=======
-//DH
-
-// required module
 const jwt = require("jsonwebtoken");
+const User = require("../models/user");
+const asyncHandler = require("express-async-handler");
 
-// create a auth middleware here
-module.exports = (req, res, next) => {
-    try {
-        const token = req.headers.authorization.split(" ")[1];
-        const decoded = jwt.verify(token, process.env.JWT_KEY);
-        req.userData = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({
-            message: 'Auth failed'
-        });
+const auth = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization").replace("Bearer ", "");
+
+    const decoded = jwt.verify(token, process.env.JWT_TOKEN);
+
+    const user1 = await User.findOne({
+      _id: decoded._id,
+      "tokens.token": token,
+    });
+
+    if (!user1) {
+      throw new Error("Token expired");
     }
+    req.user = user1;
+    req.token = token;
+    next();
+  } catch (e) {
+    console.log(e);
+    res.status(401).send({
+      error: "Please authenticate",
+    });
+  }
 };
->>>>>>> 057bb624ddd72f8599f4ec7a31046456bf1fb363
+
+module.exports = auth;

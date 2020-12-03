@@ -1,13 +1,11 @@
 //DH
 
 // required modules
-<<<<<<< HEAD
-const mongoose = require('mongoose')
-const validator = require('validator')
-=======
 const mongoose = require("mongoose");
 const validator = require("validator");
->>>>>>> 057bb624ddd72f8599f4ec7a31046456bf1fb363
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const Meeting = require("./meeting");
 
 // field that should be in this model
 /**
@@ -16,25 +14,82 @@ const validator = require("validator");
  Password  apply authentication middleware 
  Time stamps 
  *  */
-<<<<<<< HEAD
-=======
 
-const userSchema= mongoose.Schema({
-    _id: mongoose.Schema.Types.ObjectId,
-    Name:{type: String,required:true},
-    email:{
-        type:String,
-        require: true,
-        unique: true,
-       /* match: /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/*/
-        validate: [{ validator: validator.isEmail, msg: 'Invalid email' }]
+const userSchema = mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: {
+      type: String,
+      require: true,
+      unique: true,
+      /* match: /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/*/
+      validate: [{ validator: validator.isEmail, msg: "Invalid email" }],
     },
     password: {
-        type: String ,
-         required :true
-       }},
-       {timestamps:true}
-)
+      type: String,
+      required: true,
+    },
+    tokens: [
+      {
+        token: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('User',userSchema) 
->>>>>>> 057bb624ddd72f8599f4ec7a31046456bf1fb363
+userSchema.virtual("meetings", {
+  ref: "Meeting",
+  localField: "_id",
+  foreignField: "user_id",
+});
+
+userSchema.methods.generateAuthToken = async function () {
+  const user1 = this;
+  const token = jwt.sign(
+    {
+      _id: user1._id.toString(),
+    },
+    process.env.JWT_TOKEN
+  );
+  user1.tokens = user1.tokens.concat({
+    token,
+  });
+  await user1.save();
+  return token;
+};
+
+userSchema.pre("save", async function (next) {
+  const user = this;
+  if (user.isModified("password")) {
+    user.password = await bcrypt.hash(user.password, 8);
+  }
+});
+
+userSchema.statics.findByCredentials = async (email, password) => {
+  const user1 = await User.findOne({
+    email,
+  });
+  if (!user1) {
+    throw new Error("User not exists");
+  }
+
+  const isMatch = await bcrypt.compare(password, user1.password);
+  if (!isMatch) {
+    throw new Error("Wrong Password");
+  }
+
+  return user1;
+};
+
+userSchema.pre("remove", async function (next) {
+  const user = this;
+  await Meeting.deleteMany({
+    user_id: user._id,
+  });
+});
+const User = mongoose.model("User", userSchema);
+module.exports = User;
