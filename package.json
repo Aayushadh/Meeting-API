@@ -5,6 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
+<<<<<<< HEAD
+=======
+    "dev": "nodemon src/index.js",
+>>>>>>> 057bb624ddd72f8599f4ec7a31046456bf1fb363
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
